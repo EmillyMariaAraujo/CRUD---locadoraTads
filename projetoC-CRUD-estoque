@@ -1,0 +1,228 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define TAMANHO_MAXIMO 100
+#define NOME_ARQUIVO "Estoque_filmes.txt"
+
+typedef struct {
+    char titulo[50];
+    char diretor[30];
+    int ano;
+    int quantidade;
+} Filme;
+
+void exibirMenu() {
+    printf("*******************");
+    printf("\n----- Controle de Estoque da Locadora TADS -------------*\n");
+    printf("\t*                1. Adicionar filme             *\n");
+    printf("\t*                2. Visualizar filmes           *\n");
+    printf("\t*                3. Atualizar estoque           *\n");
+    printf("\t*                4. Remover filme               *\n");
+    printf("\t*                5. Criar arquivo estoque.txt   *\n");
+    printf("\t*                6. Escrever no arquivo         *\n");
+    printf("\t*                7. Ler do arquivo              *\n");
+    printf("\t*                0. Sair                        *\n");
+    printf("*******************\n");
+    printf("*                Escolha uma opcao:               *\n");
+}
+
+void adicionarFilme(Filme estoque[], int *quantidadeFilmes) {
+    if (*quantidadeFilmes < TAMANHO_MAXIMO) {
+        Filme novoFilme;
+
+        printf("Informe o titulo do filme: ");
+        scanf(" %[^\n]", novoFilme.titulo);
+
+        printf("Informe o diretor do filme: ");
+        scanf(" %[^\n]", novoFilme.diretor);
+
+        printf("Informe o ano de lancamento: ");
+        scanf("%d", &novoFilme.ano);
+
+        printf("Informe a quantidade em estoque: ");
+        scanf("%d", &novoFilme.quantidade);
+
+        estoque[*quantidadeFilmes] = novoFilme;
+        (*quantidadeFilmes)++;
+        printf("Filme adicionado com sucesso!\n");
+    } else {
+        printf("O estoque esta cheio. Nao e possivel adicionar mais filmes.\n");
+    }
+}
+
+void visualizarFilmes(Filme estoque[], int quantidadeFilmes) {
+    if (quantidadeFilmes > 0) {
+        printf("\n----- Filmes em Estoque -----\n");
+        for (int i = 0; i < quantidadeFilmes; i++) {
+            printf("Titulo: %s\n", estoque[i].titulo);
+            printf("Diretor: %s\n", estoque[i].diretor);
+            printf("Ano: %d\n", estoque[i].ano);
+            printf("Quantidade em Estoque: %d\n", estoque[i].quantidade);
+            printf("------------------------------\n");
+        }
+    } else {
+        printf("Nao ha filmes no estoque.\n");
+    }
+}
+
+void atualizarEstoque(Filme estoque[], int quantidadeFilmes) {
+     if (quantidadeFilmes > 0) {
+        char titulo[50];
+        printf("Informe o titulo do filme que deseja atualizar: ");
+        scanf(" %[^\n]", titulo);
+
+        int indice = -1;
+        for (int i = 0; i < quantidadeFilmes; i++) {
+            if (strcmp(estoque[i].titulo, titulo) == 0) {
+                indice = i;
+                break;
+            }
+        }
+
+        if (indice != -1) {
+            int novaQuantidade;
+            printf("Informe a nova quantidade em estoque: ");
+            scanf("%d", &novaQuantidade);
+
+            estoque[indice].quantidade = novaQuantidade;
+            printf("Estoque atualizado com sucesso!\n");
+        } else {
+            printf("Filme nao encontrado no estoque.\n");
+        }
+    } else {
+        printf("Nao ha filmes no estoque.\n");
+    }
+}
+
+void removerFilme(Filme estoque[], int *quantidadeFilmes) {
+    if (*quantidadeFilmes > 0) {
+        char titulo[50];
+        printf("Informe o titulo do filme que deseja remover: ");
+        scanf(" %[^\n]", titulo);
+
+        int indice = -1;
+        for (int i = 0; i < *quantidadeFilmes; i++) {
+            if (strcmp(estoque[i].titulo, titulo) == 0) {
+                indice = i;
+                break;
+            }
+        }
+
+        if (indice != -1) {
+            for (int i = indice; i < *quantidadeFilmes - 1; i++) {
+                estoque[i] = estoque[i + 1];
+            }
+            (*quantidadeFilmes)--;
+            printf("Filme removido com sucesso!\n");
+        } else {
+            printf("Filme nao encontrado no estoque.\n");
+        }
+    } else {
+        printf("Nao ha filmes no estoque.\n");
+    }
+}
+
+void carregarEstoqueArquivo(Filme estoque[], int *quantidadeFilmes) {
+    FILE *arquivo = fopen(NOME_ARQUIVO, "rb");
+
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo para leitura. Criando novo arquivo! \n");
+        return;
+    }
+
+    // Leitura da quantidade de filmes no arquivo
+    fread(quantidadeFilmes, sizeof(int), 1, arquivo);
+
+    // Leitura dos dados de cada filme
+    for (int i = 0; i < *quantidadeFilmes; i++) {
+        fread(&estoque[i], sizeof(Filme), 1, arquivo);
+    }
+
+    fclose(arquivo);
+    printf("Dados carregados do arquivo com sucesso!\n");
+}
+
+
+void escreverEstoqueArquivo(const Filme estoque[], int quantidadeFilmes) {
+    FILE *arquivo = fopen(NOME_ARQUIVO, "wb");
+
+    if (arquivo == NULL) {
+        printf("Erro ao abrir arquivo para escrever.");
+        return;
+    }
+
+    fprintf(arquivo, "%d", quantidadeFilmes);
+    for (int i = 0; i < quantidadeFilmes; i++) {
+        fprintf(arquivo, "%s\n%s\n%d\n%d\n", estoque[i].titulo, estoque[i].diretor, estoque[i].ano, estoque[i].quantidade);
+    }
+
+    fclose(arquivo);
+}
+
+int lerArquivo(Filme estoque[], const char *nomeArquivo) {
+    FILE *arquivo = fopen(nomeArquivo, "r");
+    int quantidadeFilmes = 0;
+    Filme novoFilme;
+
+    if (arquivo) {
+        fscanf(arquivo, "%d\n", &quantidadeFilmes);
+
+        for (int i = 0; i < quantidadeFilmes; i++) {
+            fscanf(arquivo, "%49[^\n]\n%29[^\n]\n%d\n%d\n", novoFilme.titulo, novoFilme.diretor, &novoFilme.ano, &novoFilme.quantidade);
+            estoque[i] = novoFilme;
+        }
+
+        fclose(arquivo);
+        printf("\n\tLista de filmes carregada do arquivo.\n");
+    } else {
+        printf("\n\tNão foi possível abrir o arquivo.\n");
+    }
+
+    return quantidadeFilmes;
+}
+
+int main() {
+    Filme estoque[TAMANHO_MAXIMO];
+    int quantidadeFilmes = 0;
+    int opcao;
+    char nomeArquivo[] = "Estoque_filmes.txt";
+
+    do {
+        exibirMenu();
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                adicionarFilme(estoque, &quantidadeFilmes);
+                break;
+            case 2:
+                visualizarFilmes(estoque, quantidadeFilmes);
+                break;
+            case 3:
+                atualizarEstoque(estoque, quantidadeFilmes);
+                break;
+            case 4:
+                removerFilme(estoque, &quantidadeFilmes);
+                break;
+            case 5:
+                carregarEstoqueArquivo(estoque, &quantidadeFilmes);
+                printf("Arquivo criado com sucesso!");
+                break;
+            case 6:
+                escreverEstoqueArquivo(estoque, quantidadeFilmes);
+                printf("Filmes escritos no arquivo!");
+                break;
+            case 7:
+                quantidadeFilmes = lerArquivo(estoque, nomeArquivo);
+                break;
+            case 0:
+                printf("Finalizando a análise do estoque. Volte sempre!\n");
+                break;
+            default:
+                printf("Opção inválida. Tente novamente.\n");
+        }
+    } while (opcao != 0);
+
+    return 0;
+}
